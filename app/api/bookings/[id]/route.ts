@@ -4,11 +4,11 @@ import { updateBooking, deleteBooking } from '@/lib/googleSheets';
 // PUT update booking
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const body = await request.json();
-    const id = params.id;
+    const { id } = await params;
 
     await updateBooking(id, body);
 
@@ -28,10 +28,10 @@ export async function PUT(
 // DELETE booking
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = params.id;
+    const { id } = await params;
 
     await deleteBooking(id);
 
