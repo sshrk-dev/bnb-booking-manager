@@ -1,36 +1,109 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Rental Booking Manager
 
-## Getting Started
+A web application to manage rental property bookings from multiple platforms (Airbnb, Goibibo, MakeMyTrip, Agoda) using Google Sheets as a database.
 
-First, run the development server:
+## Features
+
+✅ **Add/Edit/Delete Bookings** - Full CRUD operations
+✅ **Dashboard Analytics** - Total bookings, revenue, platform breakdown
+✅ **Search & Filter** - Find bookings quickly
+✅ **Google Sheets Integration** - No database setup required
+✅ **Free Hosting** - Deploy to Vercel at no cost
+✅ **Mobile Responsive** - Works on all devices
+
+## Quick Start
+
+### 1. Install Dependencies
+
+```bash
+npm install
+```
+
+### 2. Set Up Google Sheets API
+
+Follow the detailed guide in [SETUP.md](./SETUP.md) to:
+- Create a Google Cloud project
+- Enable Google Sheets API
+- Create service account credentials
+- Set up your Google Sheet
+
+### 3. Configure Environment Variables
+
+Copy `.env.local.example` to `.env.local` and fill in your credentials:
+
+```bash
+cp .env.local.example .env.local
+```
+
+Edit `.env.local` with your:
+- Google service account credentials (JSON)
+- Google Sheet ID
+
+### 4. Run Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 5. Deploy to Vercel
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+vercel
+```
 
-## Learn More
+Or connect your GitHub repo to Vercel for automatic deployments.
 
-To learn more about Next.js, take a look at the following resources:
+## Project Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+├── app/
+│   ├── api/
+│   │   └── bookings/          # API routes for CRUD operations
+│   ├── page.tsx               # Main page
+│   └── layout.tsx             # Root layout
+├── components/
+│   ├── BookingForm.tsx        # Form to add/edit bookings
+│   ├── BookingsTable.tsx      # Table to display bookings
+│   └── Dashboard.tsx          # Analytics dashboard
+├── lib/
+│   └── googleSheets.ts        # Google Sheets API integration
+├── types/
+│   └── index.ts               # TypeScript types
+├── .env.local.example         # Environment variables template
+└── SETUP.md                   # Detailed setup instructions
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Tech Stack
 
-## Deploy on Vercel
+- **Next.js 15** - React framework with App Router
+- **TypeScript** - Type safety
+- **Tailwind CSS** - Styling
+- **Google Sheets API** - Database
+- **Vercel** - Hosting
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Documentation
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [📖 Complete Setup Guide](./SETUP.md) - Step-by-step instructions
+- [🔧 Environment Variables](./.env.local.example) - Configuration template
+
+## Screenshots
+
+### Dashboard
+View total bookings, revenue, and platform breakdown at a glance.
+
+### Add/Edit Booking
+Simple form to capture all booking details.
+
+### Bookings Table
+Searchable, filterable table with edit and delete actions.
+
+## Support
+
+For issues or questions, refer to the [Troubleshooting section in SETUP.md](./SETUP.md#troubleshooting).
+
+## License
+
+MIT
