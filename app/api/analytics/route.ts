@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getAllBookings } from '@/lib/googleSheets';
+import { getAllBookings, Booking } from '@/lib/googleSheets';
 
 export async function GET(request: Request) {
   try {
@@ -63,7 +63,7 @@ export async function GET(request: Request) {
   }
 }
 
-function calculateMonthlyRoomPerformance(bookings: any[]) {
+function calculateMonthlyRoomPerformance(bookings: Booking[]) {
   const performance: Record<string, Record<string, { count: number; revenue: number }>> = {};
 
   bookings.forEach(booking => {
@@ -86,7 +86,7 @@ function calculateMonthlyRoomPerformance(bookings: any[]) {
   return performance;
 }
 
-function calculatePlatformShare(bookings: any[]) {
+function calculatePlatformShare(bookings: Booking[]) {
   const platformCount: Record<string, { count: number; revenue: number }> = {};
 
   bookings.forEach(booking => {
@@ -109,7 +109,7 @@ function calculatePlatformShare(bookings: any[]) {
   }));
 }
 
-function calculateRoomOccupancy(bookings: any[]) {
+function calculateRoomOccupancy(bookings: Booking[]) {
   const roomStats: Record<string, { bookings: number; totalDays: number; revenue: number }> = {};
 
   bookings.forEach(booking => {
@@ -137,7 +137,7 @@ function calculateRoomOccupancy(bookings: any[]) {
   }));
 }
 
-function calculateRevenueTrends(bookings: any[]) {
+function calculateRevenueTrends(bookings: Booking[]) {
   const trends: Record<string, number> = {};
 
   bookings.forEach(booking => {
@@ -156,7 +156,7 @@ function calculateRevenueTrends(bookings: any[]) {
     .sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime());
 }
 
-function calculateTopRooms(bookings: any[]) {
+function calculateTopRooms(bookings: Booking[]) {
   const roomStats: Record<string, { bookings: number; revenue: number }> = {};
 
   bookings.forEach(booking => {

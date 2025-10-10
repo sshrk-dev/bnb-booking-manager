@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { ROOM_IDS } from '@/types';
 import Link from 'next/link';
 
@@ -24,11 +24,7 @@ export default function AnalyticsPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, [platform, roomId, startDate, endDate]);
-
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -45,7 +41,11 @@ export default function AnalyticsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [platform, roomId, startDate, endDate]);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
 
   const resetFilters = () => {
     setPlatform('All');

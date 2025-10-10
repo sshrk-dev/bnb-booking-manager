@@ -21,6 +21,7 @@ export async function getSheetsClient() {
   });
 
   const authClient = await auth.getClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sheets = google.sheets({ version: 'v4', auth: authClient as any });
 
   return sheets;
