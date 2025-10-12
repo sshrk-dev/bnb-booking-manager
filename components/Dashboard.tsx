@@ -124,7 +124,8 @@ export default function Dashboard() {
                           platform.platform === 'Airbnb' ? 'bg-red-500' :
                           platform.platform === 'Goibibo' ? 'bg-blue-500' :
                           platform.platform === 'MakeMyTrip' ? 'bg-orange-500' :
-                          'bg-green-500'
+                          platform.platform === 'Agoda' ? 'bg-green-500' :
+                          'bg-gray-500'
                         }`}
                         style={{ width: `${(platform.count / stats.totalBookings) * 100}%` }}
                       ></div>

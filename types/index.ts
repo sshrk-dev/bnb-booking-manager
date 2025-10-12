@@ -5,7 +5,7 @@ export interface Booking {
   aadhaar: string;
   phone: string;
   payment: string;
-  platform: 'Airbnb' | 'Goibibo' | 'MakeMyTrip' | 'Agoda';
+  platform: 'Airbnb' | 'Goibibo' | 'MakeMyTrip' | 'Agoda' | 'Offline';
   roomId: string;
   checkIn: string;
   checkOut: string;

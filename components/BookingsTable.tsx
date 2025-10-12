@@ -60,6 +60,7 @@ export default function BookingsTable({ bookings, onEdit, onDelete, loading }: B
             <option value="Goibibo">Goibibo</option>
             <option value="MakeMyTrip">MakeMyTrip</option>
             <option value="Agoda">Agoda</option>
+            <option value="Offline">Offline</option>
           </select>
         </div>
       </div>
@@ -139,7 +140,8 @@ export default function BookingsTable({ bookings, onEdit, onDelete, loading }: B
                       booking.platform === 'Airbnb' ? 'bg-red-100 text-red-800' :
                       booking.platform === 'Goibibo' ? 'bg-blue-100 text-blue-800' :
                       booking.platform === 'MakeMyTrip' ? 'bg-orange-100 text-orange-800' :
-                      'bg-green-100 text-green-800'
+                      booking.platform === 'Agoda' ? 'bg-green-100 text-green-800' :
+                      'bg-gray-100 text-gray-800'
                     }`}>
                       {booking.platform}
                     </span>

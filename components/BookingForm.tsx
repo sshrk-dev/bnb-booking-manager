@@ -181,6 +181,7 @@ export default function BookingForm({ onSuccess, editingBooking, onCancel }: Boo
             <option value="Goibibo">Goibibo</option>
             <option value="MakeMyTrip">MakeMyTrip</option>
             <option value="Agoda">Agoda</option>
+            <option value="Offline">Offline</option>
           </select>
         </div>
 
