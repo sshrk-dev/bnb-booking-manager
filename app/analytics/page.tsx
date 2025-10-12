@@ -277,7 +277,7 @@ export default function AnalyticsPage() {
                       cx="50%"
                       cy="50%"
                       outerRadius={100}
-                      label={(entry: { platform: string; percentage: number }) => `${entry.platform}: ${entry.percentage.toFixed(1)}%`}
+                      label
                     >
                       {analytics.platformShare.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={PLATFORM_COLORS[entry.platform] || '#666'} />
