@@ -284,10 +284,7 @@ export default function AnalyticsPage() {
                       ))}
                     </Pie>
                     <Tooltip
-                      formatter={(value: number, name: string, props: { payload: { revenue: number } }) => [
-                        `${value} bookings (₹${props.payload.revenue.toLocaleString('en-IN')})`,
-                        name
-                      ]}
+                      formatter={(value: number) => [`${value} bookings`, 'Count']}
                     />
                     <Legend />
                   </PieChart>
