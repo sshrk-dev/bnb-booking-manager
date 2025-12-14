@@ -23,3 +23,15 @@ export interface BookingStats {
   }[];
   recentBookings: Booking[];
 }
+
+export interface InvoiceData {
+  invoiceNo: string;
+  invoiceDate: string;
+  bookingId: string;
+  guestName: string;
+  checkIn: string;
+  checkOut: string;
+  nights: number;
+  pricePerNight: number;
+  totalAmount: number;
+}
