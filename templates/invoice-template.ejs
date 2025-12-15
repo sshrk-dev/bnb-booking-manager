@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invoice - <%= invoiceNo %></title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,700;1,400&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'EB Garamond', Georgia, 'Times New Roman', serif;
+      background-color: #FFFCF5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .invoice-page {
+      width: 210mm;
+      height: 297mm;
+      padding: 8mm;
+      background-color: #FFFCF5;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    .outer-border {
+      border: 3pt solid #C3A564;
+      padding: 15px 22px;
+      background-color: #FFFCF5;
+      height: calc(297mm - 16mm);
+      overflow: hidden;
+    }
+
+    /* Decorative Lines */
+    .decorative-line {
+      text-align: center;
+      color: #C3A564;
+      font-size: 10pt;
+      letter-spacing: 0;
+      margin: 8pt 0 4pt 0;
+    }
+
+    .logo-container {
+      text-align: center;
+      margin: 6pt 0;
+    }
+
+    .logo-container img {
+      max-width: 110px;
+      max-height: 70px;
+      object-fit: contain;
+    }
+
+    .signature-image {
+      max-width: 180px;
+      max-height: 60px;
+      object-fit: contain;
+      margin-bottom: 4pt;
+      transform: rotate(-5deg);
+    }
+
+    /* Brand Header */
+    .brand-name {
+      text-align: center;
+      font-size: 26pt;
+      font-weight: bold;
+      color: #00554B;
+      margin: 0;
+      letter-spacing: 0.5pt;
+    }
+
+    .brand-divider {
+      text-align: center;
+      color: #C3A564;
+      font-size: 11pt;
+      margin: 3pt 0;
+    }
+
+    .tagline {
+      text-align: center;
+      font-size: 9pt;
+      font-style: italic;
+      color: #A08246;
+      letter-spacing: 2pt;
+      margin-bottom: 8pt;
+    }
+
+    /* Invoice Title Box */
+    .invoice-title-box {
+      background-color: #00554B;
+      border: 2.25pt solid #C3A564;
+      padding: 8pt 0;
+      text-align: center;
+      margin: 0 0 8pt 0;
+    }
+
+    .invoice-title-box .star {
+      color: #C3A564;
+      font-size: 13pt;
+    }
+
+    .invoice-title-box .title {
+      color: #FFFFFF;
+      font-size: 20pt;
+      font-weight: bold;
+      letter-spacing: 4pt;
+      margin: 0 5pt;
+    }
+
+    /* Invoice Details Row */
+    .invoice-details-row {
+      display: table;
+      width: 100%;
+      margin: 8pt 0;
+    }
+
+    .invoice-detail-cell {
+      display: table-cell;
+      width: 33.33%;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    .detail-label {
+      font-size: 9pt;
+      font-weight: bold;
+      color: #A08246;
+      margin-bottom: 2pt;
+    }
+
+    .detail-value {
+      font-size: 11pt;
+      color: #232323;
+    }
+
+    /* Separator Line */
+    .separator-line {
+      text-align: center;
+      color: #C3A564;
+      font-size: 8pt;
+      margin: 6pt 0;
+    }
+
+    /* Guest Details Section */
+    .guest-details-box {
+      background-color: #F8F6F0;
+      border: 1pt solid #00554B;
+      padding: 8pt 14pt;
+      margin: 6pt 0;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 4pt;
+    }
+
+    .section-header .bracket {
+      color: #C3A564;
+      font-size: 10pt;
+    }
+
+    .section-header .title {
+      color: #00554B;
+      font-size: 10pt;
+      font-weight: bold;
+    }
+
+    .guest-name {
+      text-align: center;
+      font-size: 12pt;
+      font-weight: bold;
+      color: #232323;
+      margin-top: 2pt;
+    }
+
+    /* Stay Details Header */
+    .stay-details-header {
+      text-align: center;
+      margin: 8pt 0 5pt 0;
+    }
+
+    .stay-details-header .line {
+      color: #C3A564;
+      font-size: 10pt;
+    }
+
+    .stay-details-header .title {
+      color: #00554B;
+      font-size: 11pt;
+      font-weight: bold;
+      margin: 0 5pt;
+    }
+
+    /* Stay Details Table */
+    .stay-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 0;
+    }
+
+    .stay-table th {
+      background-color: #00554B;
+      color: #FFFFFF;
+      font-size: 9pt;
+      font-weight: bold;
+      padding: 5pt 10pt;
+      border: 0.75pt solid #C3A564;
+      text-align: center;
+    }
+
+    .stay-table td {
+      font-size: 9pt;
+      padding: 4pt 10pt;
+      border: 0.5pt solid #E0DDD5;
+    }
+
+    .stay-table td.label {
+      font-weight: bold;
+      color: #00554B;
+      text-align: left;
+      padding-left: 15pt;
+    }
+
+    .stay-table td.value {
+      color: #232323;
+      text-align: right;
+      padding-right: 15pt;
+    }
+
+    .stay-table tr.light-bg td {
+      background-color: #F8F6F0;
+    }
+
+    .stay-table tr.white-bg td {
+      background-color: #FFFFFF;
+    }
+
+    /* Grand Total Row */
+    .grand-total-row {
+      display: table;
+      width: 100%;
+      background-color: #00554B;
+      border: 1pt solid #C3A564;
+    }
+
+    .grand-total-row .label {
+      display: table-cell;
+      width: 50%;
+      padding: 6pt 14pt;
+      color: #FFFFFF;
+      font-size: 11pt;
+      font-weight: bold;
+      vertical-align: middle;
+    }
+
+    .grand-total-row .value {
+      display: table-cell;
+      width: 50%;
+      padding: 6pt 14pt;
+      color: #C3A564;
+      font-size: 13pt;
+      font-weight: bold;
+      text-align: right;
+      vertical-align: middle;
+    }
+
+    /* Bank Details Separator */
+    .bank-separator {
+      text-align: center;
+      color: #C3A564;
+      font-size: 8pt;
+      margin: 8pt 0;
+    }
+
+    /* Bank Details Section */
+    .bank-details-box {
+      background-color: #F8F6F0;
+      border: 0.75pt solid #00554B;
+      padding: 8pt 14pt;
+      margin: 6pt 0;
+      display: table;
+      width: 100%;
+    }
+
+    .bank-details-left {
+      display: table-cell;
+      width: 65%;
+      vertical-align: middle;
+    }
+
+    .bank-details-right {
+      display: table-cell;
+      width: 35%;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    .qr-code-image {
+      max-width: 80px;
+      max-height: 80px;
+      object-fit: contain;
+    }
+
+    .qr-label {
+      font-size: 7pt;
+      color: #666666;
+      margin-top: 3pt;
+    }
+
+    .bank-title {
+      text-align: center;
+      color: #00554B;
+      font-size: 10pt;
+      font-weight: bold;
+      margin-bottom: 5pt;
+    }
+
+    .bank-line {
+      font-size: 9pt;
+      margin: 2pt 0;
+      padding-left: 10pt;
+    }
+
+    .bank-line .label {
+      font-weight: bold;
+      color: #00554B;
+    }
+
+    .bank-line .value {
+      color: #232323;
+    }
+
+    /* Terms & Signature Row */
+    .terms-signature-row {
+      display: table;
+      width: 100%;
+      margin: 8pt 0;
+    }
+
+    /* Terms & Conditions */
+    .terms-section {
+      display: table-cell;
+      width: 55%;
+      vertical-align: top;
+      padding-right: 15pt;
+    }
+
+    .terms-title {
+      font-size: 8pt;
+      font-weight: bold;
+      color: #00554B;
+      margin-bottom: 3pt;
+    }
+
+    .terms-item {
+      font-size: 8pt;
+      color: #666666;
+      margin: 1pt 0;
+      padding-left: 10pt;
+    }
+
+    /* Signature Section */
+    .signature-section {
+      display: table-cell;
+      width: 45%;
+      text-align: right;
+      vertical-align: middle;
+    }
+
+    .signature-block {
+      display: inline-block;
+      text-align: center;
+    }
+
+    .signature-text {
+      font-size: 8pt;
+      font-style: italic;
+      color: #666666;
+    }
+
+    .signature-name {
+      font-size: 9pt;
+      font-weight: bold;
+      color: #00554B;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      margin-top: 6pt;
+    }
+
+    .footer-divider {
+      color: #C3A564;
+      font-size: 10pt;
+      margin-bottom: 3pt;
+    }
+
+    .thank-you {
+      font-size: 11pt;
+      font-weight: bold;
+      color: #00554B;
+      margin-bottom: 2pt;
+    }
+
+    .footer-subtext {
+      font-size: 9pt;
+      font-style: italic;
+      color: #666666;
+      margin-bottom: 3pt;
+    }
+
+    .footer-symbols {
+      color: #C3A564;
+      font-size: 13pt;
+      margin: 3pt 0;
+    }
+
+    .bottom-line {
+      color: #C3A564;
+      font-size: 10pt;
+      margin-top: 4pt;
+    }
+  </style>
+</head>
+<body>
+  <div class="invoice-page">
+    <div class="outer-border">
+      <!-- Top Decorative Line -->
+      <div class="decorative-line">══════════════════════════════════════════════════</div>
+
+      <!-- Company Logo -->
+      <div class="logo-container">
+        <img src="<%= logoPath %>" alt="House of Ridhima Kaur" />
+      </div>
+
+      <!-- Brand Name -->
+      <h1 class="brand-name">House of Ridhima Kaur</h1>
+
+      <!-- Brand Divider -->
+      <div class="brand-divider">─────────── ✦ ───────────</div>
+
+      <!-- Tagline -->
+      <div class="tagline">L U X U R Y &nbsp;&nbsp; V A C A T I O N &nbsp;&nbsp; R E N T A L S</div>
+
+      <!-- Invoice Title Box -->
+      <div class="invoice-title-box">
+        <span class="star">✦</span>
+        <span class="title">I N V O I C E</span>
+        <span class="star">✦</span>
+      </div>
+
+      <!-- Invoice Details Row -->
+      <div class="invoice-details-row">
+        <div class="invoice-detail-cell">
+          <div class="detail-label">Invoice No.</div>
+          <div class="detail-value"><%= invoiceNo %></div>
+        </div>
+        <div class="invoice-detail-cell">
+          <div class="detail-label">Date</div>
+          <div class="detail-value"><%= invoiceDate %></div>
+        </div>
+        <div class="invoice-detail-cell">
+          <div class="detail-label">Booking ID</div>
+          <div class="detail-value"><%= bookingId %></div>
+        </div>
+      </div>
+
+      <!-- Separator Line -->
+      <div class="separator-line">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+
+      <!-- Guest Details Section -->
+      <div class="guest-details-box">
+        <div class="section-header">
+          <span class="bracket">┌───</span>
+          <span class="title">GUEST DETAILS</span>
+          <span class="bracket">───┐</span>
+        </div>
+        <div class="guest-name"><%= guestName %></div>
+      </div>
+
+      <!-- Stay Details Header -->
+      <div class="stay-details-header">
+        <span class="line">───────────────────</span>
+        <span class="title">STAY DETAILS</span>
+        <span class="line">───────────────────</span>
+      </div>
+
+      <!-- Stay Details Table -->
+      <table class="stay-table">
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="light-bg">
+            <td class="label">Check-In</td>
+            <td class="value"><%= checkIn %></td>
+          </tr>
+          <tr class="white-bg">
+            <td class="label">Check-Out</td>
+            <td class="value"><%= checkOut %></td>
+          </tr>
+          <tr class="light-bg">
+            <td class="label">Duration</td>
+            <td class="value"><%= nights %> Night(s)</td>
+          </tr>
+          <tr class="white-bg">
+            <td class="label">Rate per Night</td>
+            <td class="value">₹<%= pricePerNight %></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Grand Total Row -->
+      <div class="grand-total-row">
+        <div class="label">GRAND TOTAL</div>
+        <div class="value">₹<%= totalAmount %></div>
+      </div>
+
+      <!-- Bank Details Separator -->
+      <div class="bank-separator">✦ ═══════════════════════════════════════════════════════ ✦</div>
+
+      <!-- Bank Details Section -->
+      <div class="bank-details-box">
+        <div class="bank-details-left">
+          <div class="bank-title">◈ BANK DETAILS ◈</div>
+          <div class="bank-line">
+            <span class="label">Account Name:</span>
+            <span class="value">HOUSE OF RIDHIMA KAUR</span>
+          </div>
+          <div class="bank-line">
+            <span class="label">Account No.:</span>
+            <span class="value">81830713139</span>
+          </div>
+          <div class="bank-line">
+            <span class="label">IFSC Code:</span>
+            <span class="value">IDFB0021012</span>
+          </div>
+          <div class="bank-line">
+            <span class="label">Bank:</span>
+            <span class="value">IDFC FIRST</span>
+          </div>
+          <div class="bank-line">
+            <span class="label">Branch:</span>
+            <span class="value">GURGAON SUSHANT LOK-I</span>
+          </div>
+        </div>
+        <div class="bank-details-right">
+          <img src="<%= qrCodePath %>" alt="Payment QR Code" class="qr-code-image" />
+          <div class="qr-label">Scan to Pay</div>
+        </div>
+      </div>
+
+      <!-- Terms & Signature Row -->
+      <div class="terms-signature-row">
+        <!-- Terms & Conditions -->
+        <div class="terms-section">
+          <div class="terms-title">Terms & Conditions:</div>
+          <div class="terms-item">• Check-in: 2:00 PM | Check-out: 11:00 AM</div>
+          <div class="terms-item">• Valid government ID mandatory at check-in</div>
+          <div class="terms-item">• No refunds for early checkout or no-shows</div>
+          <div class="terms-item">• Damages to property will be charged separately</div>
+        </div>
+
+        <!-- Signature Section -->
+        <div class="signature-section">
+          <div class="signature-block">
+            <img src="<%= signaturePath %>" alt="Signature" class="signature-image" />
+            <div class="signature-text">Authorized Signature</div>
+            <div class="signature-name">House of Ridhima Kaur</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <div class="footer-divider">─────────── ✦ ❖ ✦ ───────────</div>
+        <div class="thank-you">Thank You for Staying With Us!</div>
+        <div class="footer-subtext">We hope to host you again soon.</div>
+        <div class="footer-symbols">❧ ✦ ❧</div>
+        <div class="bottom-line">══════════════════════════════════════════════════</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

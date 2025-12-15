@@ -29,12 +29,12 @@ export default function InvoicePreview({ data, onCreateAnother }: InvoicePreview
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleDownload = async () => {
+  const handleDownloadPdf = async () => {
     setDownloading(true);
     setError('');
 
     try {
-      const response = await fetch('/api/invoice', {
+      const response = await fetch('/api/invoice/pdf', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -43,24 +43,21 @@ export default function InvoicePreview({ data, onCreateAnother }: InvoicePreview
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate invoice');
+        throw new Error('Failed to generate PDF');
       }
 
-      // Get the blob from the response
       const blob = await response.blob();
-
-      // Create download link
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${data.invoiceNo}_${data.guestName.replace(/\s+/g, '_')}.docx`;
+      a.download = `${data.invoiceNo}_${data.guestName.replace(/\s+/g, '_')}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (err) {
-      console.error('Download error:', err);
-      setError('Failed to download invoice. Please try again.');
+      console.error('PDF generation error:', err);
+      setError('Failed to generate PDF. Please try again.');
     } finally {
       setDownloading(false);
     }
@@ -136,9 +133,9 @@ export default function InvoicePreview({ data, onCreateAnother }: InvoicePreview
       {/* Actions */}
       <div className="flex flex-wrap gap-4">
         <button
-          onClick={handleDownload}
+          onClick={handleDownloadPdf}
           disabled={downloading}
-          className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition inline-flex items-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          className="bg-red-600 text-white px-6 py-2 rounded-md hover:bg-red-700 transition inline-flex items-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -154,7 +151,7 @@ export default function InvoicePreview({ data, onCreateAnother }: InvoicePreview
               d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
             />
           </svg>
-          {downloading ? 'Generating...' : 'Download Invoice (.docx)'}
+          {downloading ? 'Generating PDF...' : 'Download Invoice (.pdf)'}
         </button>
 
         <button
@@ -178,10 +175,6 @@ export default function InvoicePreview({ data, onCreateAnother }: InvoicePreview
           Create Another Invoice
         </button>
       </div>
-
-      <p className="mt-4 text-sm text-gray-500">
-        The invoice will be downloaded as a Word document (.docx) with your exact template design.
-      </p>
     </div>
   );
 }
