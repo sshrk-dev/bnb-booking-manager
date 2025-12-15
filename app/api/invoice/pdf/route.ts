@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
 
     // Set the HTML content
     await page.setContent(html, {
-      waitUntil: 'networkidle0',
+      waitUntil: 'domcontentloaded',
     });
 
     // Generate PDF
