@@ -53,6 +53,10 @@ export async function POST(request: NextRequest) {
     const signatureFile = path.join(publicDir, 'signature.png');
     const qrCodeFile = path.join(publicDir, 'qr-code.png');
 
+    const fontsDir = path.join(process.cwd(), 'public', 'fonts');
+    const fontRegularFile = path.join(fontsDir, 'eb-garamond-regular.ttf');
+    const fontBoldFile = path.join(fontsDir, 'eb-garamond-bold.ttf');
+
     const logoBase64 = fs.existsSync(logoFile)
       ? `data:image/png;base64,${fs.readFileSync(logoFile).toString('base64')}`
       : '';
@@ -61,6 +65,12 @@ export async function POST(request: NextRequest) {
       : '';
     const qrCodeBase64 = fs.existsSync(qrCodeFile)
       ? `data:image/png;base64,${fs.readFileSync(qrCodeFile).toString('base64')}`
+      : '';
+    const fontRegularBase64 = fs.existsSync(fontRegularFile)
+      ? `data:font/truetype;base64,${fs.readFileSync(fontRegularFile).toString('base64')}`
+      : '';
+    const fontBoldBase64 = fs.existsSync(fontBoldFile)
+      ? `data:font/truetype;base64,${fs.readFileSync(fontBoldFile).toString('base64')}`
       : '';
 
     // Format the data for the template
@@ -77,6 +87,8 @@ export async function POST(request: NextRequest) {
       logoPath: logoBase64,
       signaturePath: signatureBase64,
       qrCodePath: qrCodeBase64,
+      fontRegular: fontRegularBase64,
+      fontBold: fontBoldBase64,
     };
 
     // Read the EJS template

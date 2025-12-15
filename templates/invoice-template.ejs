@@ -5,6 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Invoice - <%= invoiceNo %></title>
   <style>
+    @font-face {
+      font-family: 'EB Garamond';
+      font-style: normal;
+      font-weight: 400;
+      src: url('<%= fontRegular %>') format('truetype');
+    }
+    @font-face {
+      font-family: 'EB Garamond';
+      font-style: normal;
+      font-weight: 700;
+      src: url('<%= fontBold %>') format('truetype');
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -12,7 +25,7 @@
     }
 
     body {
-      font-family: Georgia, 'Times New Roman', serif;
+      font-family: 'EB Garamond', Georgia, 'Times New Roman', serif;
       background-color: #FFFCF5;
       -webkit-font-smoothing: antialiased;
     }
