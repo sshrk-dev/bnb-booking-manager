@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Booking } from '@/types';
 
 interface BookingsTableProps {
@@ -562,12 +563,19 @@ export default function BookingsTable({ bookings, onEdit, onDelete, loading }: B
                     <div className="md:col-span-2">
                       <p className="text-sm text-gray-500 mb-2">Aadhaar Card Image</p>
                       {signedUrls['primary'] ? (
-                        <img
-                          src={signedUrls['primary']}
-                          alt="Primary Guest Aadhaar"
-                          className="w-full max-w-md rounded-lg border border-gray-300 shadow-sm hover:shadow-md transition cursor-pointer"
+                        <div
+                          className="relative w-full max-w-md h-64 rounded-lg border border-gray-300 shadow-sm hover:shadow-md transition cursor-pointer overflow-hidden"
                           onClick={() => window.open(signedUrls['primary'], '_blank')}
-                        />
+                        >
+                          <Image
+                            src={signedUrls['primary']}
+                            alt="Primary Guest Aadhaar"
+                            fill
+                            sizes="(max-width: 768px) 100vw, 448px"
+                            className="object-contain"
+                            unoptimized
+                          />
+                        </div>
                       ) : (
                         <div className="w-full max-w-md h-48 rounded-lg border border-gray-300 bg-gray-100 flex items-center justify-center">
                           <div className="text-center">
@@ -608,12 +616,19 @@ export default function BookingsTable({ bookings, onEdit, onDelete, loading }: B
                             <div className="md:col-span-2">
                               <p className="text-sm text-gray-500 mb-2">Aadhaar Card Image</p>
                               {signedUrls[`guest-${index}`] ? (
-                                <img
-                                  src={signedUrls[`guest-${index}`]}
-                                  alt={`Guest ${index + 2} Aadhaar`}
-                                  className="w-full max-w-md rounded-lg border border-gray-300 shadow-sm hover:shadow-md transition cursor-pointer"
+                                <div
+                                  className="relative w-full max-w-md h-64 rounded-lg border border-gray-300 shadow-sm hover:shadow-md transition cursor-pointer overflow-hidden"
                                   onClick={() => window.open(signedUrls[`guest-${index}`], '_blank')}
-                                />
+                                >
+                                  <Image
+                                    src={signedUrls[`guest-${index}`]}
+                                    alt={`Guest ${index + 2} Aadhaar`}
+                                    fill
+                                    sizes="(max-width: 768px) 100vw, 448px"
+                                    className="object-contain"
+                                    unoptimized
+                                  />
+                                </div>
                               ) : (
                                 <div className="w-full max-w-md h-48 rounded-lg border border-gray-300 bg-gray-100 flex items-center justify-center">
                                   <div className="text-center">
