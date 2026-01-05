@@ -130,6 +130,7 @@ export default function Home() {
           onSuccess={handleSuccess}
           editingBooking={editingBooking}
           onCancel={handleCancel}
+          allBookings={bookings}
         />
 
         {/* Bookings Table */}

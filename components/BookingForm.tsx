@@ -13,9 +13,10 @@ interface BookingFormProps {
   onSuccess: () => void;
   editingBooking?: Booking | null;
   onCancel?: () => void;
+  allBookings?: Booking[];
 }
 
-export default function BookingForm({ onSuccess, editingBooking, onCancel }: BookingFormProps) {
+export default function BookingForm({ onSuccess, editingBooking, onCancel, allBookings = [] }: BookingFormProps) {
   const [formData, setFormData] = useState({
     date: editingBooking?.date || new Date().toISOString().split('T')[0],
     name: editingBooking?.name || '',
@@ -82,6 +83,46 @@ export default function BookingForm({ onSuccess, editingBooking, onCancel }: Boo
     return (parseFloat(formData.ratePerNight) || 0) * totalNights;
   }, [useCustomRates, customDailyRates, formData.ratePerNight, totalNights, dateRange]);
 
+  // Check if two date ranges overlap
+  const datesOverlap = (start1: string, end1: string, start2: string, end2: string): boolean => {
+    const s1 = new Date(start1);
+    const e1 = new Date(end1);
+    const s2 = new Date(start2);
+    const e2 = new Date(end2);
+
+    // Two date ranges overlap if one starts before the other ends
+    return s1 < e2 && s2 < e1;
+  };
+
+  // Filter available rooms based on selected dates
+  const availableRooms = useMemo(() => {
+    // If no dates selected, show all rooms
+    if (!formData.checkIn || !formData.checkOut) {
+      return [...ROOM_IDS];
+    }
+
+    // Get all booked rooms for the selected date range
+    const bookedRooms = allBookings
+      .filter(booking => {
+        // Exclude the current booking when editing
+        if (editingBooking && booking.id === editingBooking.id) {
+          return false;
+        }
+
+        // Check if this booking overlaps with our selected dates
+        return datesOverlap(
+          formData.checkIn,
+          formData.checkOut,
+          booking.checkIn,
+          booking.checkOut
+        );
+      })
+      .map(booking => booking.roomId);
+
+    // Return rooms that are not in the booked list
+    return ROOM_IDS.filter(roomId => !bookedRooms.includes(roomId)) as string[];
+  }, [formData.checkIn, formData.checkOut, allBookings, editingBooking]);
+
   // Update form when editingBooking changes
   useEffect(() => {
     if (editingBooking) {
@@ -104,6 +145,16 @@ export default function BookingForm({ onSuccess, editingBooking, onCancel }: Boo
       setPrimaryAadhaarFile(null);
     }
   }, [editingBooking]);
+
+  // Auto-select first available room if current selection becomes unavailable
+  useEffect(() => {
+    if (formData.checkIn && formData.checkOut && availableRooms.length > 0) {
+      // If current room is not in available rooms, select the first available one
+      if (!availableRooms.includes(formData.roomId)) {
+        setFormData(prev => ({ ...prev, roomId: availableRooms[0] }));
+      }
+    }
+  }, [availableRooms, formData.checkIn, formData.checkOut, formData.roomId]);
 
   // Initialize custom rates when switching to custom mode or dates change
   useEffect(() => {
@@ -541,7 +592,11 @@ export default function BookingForm({ onSuccess, editingBooking, onCancel }: Boo
         {/* Room ID */}
         <div>
           <label htmlFor="roomId" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-            Room Number *
+            Room Number * {formData.checkIn && formData.checkOut && availableRooms.length < ROOM_IDS.length && (
+              <span className="text-xs text-green-600 ml-2">
+                ({availableRooms.length} available)
+              </span>
+            )}
           </label>
           <select
             id="roomId"
@@ -549,13 +604,28 @@ export default function BookingForm({ onSuccess, editingBooking, onCancel }: Boo
             value={formData.roomId}
             onChange={(e) => setFormData({ ...formData, roomId: e.target.value })}
             className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+            disabled={availableRooms.length === 0}
           >
-            {ROOM_IDS.map((roomId) => (
-              <option key={roomId} value={roomId}>
-                {roomId}
-              </option>
-            ))}
+            {availableRooms.length === 0 ? (
+              <option value="">No rooms available for selected dates</option>
+            ) : (
+              availableRooms.map((roomId) => (
+                <option key={roomId} value={roomId}>
+                  {roomId}
+                </option>
+              ))
+            )}
           </select>
+          {availableRooms.length === 0 && formData.checkIn && formData.checkOut && (
+            <p className="mt-1 text-xs text-red-600">
+              All rooms are booked for the selected dates. Please choose different dates.
+            </p>
+          )}
+          {formData.checkIn && formData.checkOut && availableRooms.length > 0 && availableRooms.length < ROOM_IDS.length && (
+            <p className="mt-1 text-xs text-blue-600">
+              {ROOM_IDS.length - availableRooms.length} room(s) already booked for these dates
+            </p>
+          )}
         </div>
 
         {/* Check-in */}

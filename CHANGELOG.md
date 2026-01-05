@@ -2,6 +2,127 @@
 
 All notable changes to the Rental Booking Manager project are documented here.
 
+## [2.2.0] - 2026-01-05
+
+### Major Changes
+
+This release adds intelligent room availability checking to prevent double-booking conflicts.
+
+---
+
+## 🏨 Feature: Smart Room Availability System
+
+### Problem Solved
+Previously, users could accidentally book the same room for overlapping dates, causing conflicts and double-bookings. For example:
+- Room SS1020 booked Jan 1-5
+- User could still select SS1020 for Jan 3-7 (conflict!)
+
+### Solution
+Dynamic room filtering that only shows available rooms based on selected check-in and check-out dates.
+
+### How It Works
+
+#### Date Overlap Detection
+The system checks if two date ranges overlap using the logic:
+```typescript
+// Two bookings conflict if one starts before the other ends
+Start1 < End2 AND Start2 < End1
+```
+
+**Examples**:
+- ✅ Jan 1-5 and Jan 5-10 → **No conflict** (checkout = next checkin)
+- ❌ Jan 1-5 and Jan 3-7 → **Conflict** (overlapping dates)
+- ❌ Jan 1-10 and Jan 3-5 → **Conflict** (one contains the other)
+- ✅ Jan 1-5 and Jan 10-15 → **No conflict** (separate dates)
+
+#### Room Filtering Process
+1. **User selects dates**: Check-in and check-out dates are entered
+2. **System checks conflicts**: Scans all existing bookings for overlaps
+3. **Filters rooms**: Only shows rooms NOT booked for those dates
+4. **Auto-selection**: If current room becomes unavailable, auto-selects first available
+
+#### UI Features
+- **Real-time Updates**: Room dropdown updates as dates change
+- **Availability Counter**: Shows "X available" when some rooms are booked
+- **Visual Feedback**:
+  - Green text: Available rooms count
+  - Blue text: Number of booked rooms
+  - Red text: All rooms booked (disables form)
+- **Disabled State**: Form cannot be submitted if no rooms available
+- **Edit Mode**: When editing, current booking's room remains available
+
+#### Example Scenarios
+
+**Scenario 1: Creating New Booking**
+```
+Existing Bookings:
+- Room SS1020: Jan 1-5
+- Room SS1022: Jan 3-8
+- Room SS1124: Jan 10-15
+
+User selects: Jan 2-6
+Available Rooms: SS1124, SS1125, SS1003, SS715 (4 available)
+Unavailable: SS1020, SS1022 (conflict with selected dates)
+```
+
+**Scenario 2: All Rooms Booked**
+```
+User selects: Jan 5-7
+All 6 rooms already booked for these dates
+UI shows: "No rooms available for selected dates"
+Submit button: Disabled
+Message: "Please choose different dates"
+```
+
+**Scenario 3: Editing Existing Booking**
+```
+Editing: Booking for Room SS1020 (Jan 1-5)
+User changes dates to: Jan 3-7
+Available Rooms: Includes SS1020 (current room)
+Reason: System excludes the booking being edited from conflict check
+```
+
+### Technical Implementation
+
+#### Files Modified
+- `app/page.tsx` - Pass all bookings to BookingForm
+- `components/BookingForm.tsx` - Add availability logic and filtering
+
+#### Key Functions
+```typescript
+// Check date overlap
+datesOverlap(start1, end1, start2, end2)
+
+// Filter available rooms
+const availableRooms = useMemo(() => {
+  // Get booked rooms for selected dates
+  // Exclude current booking when editing
+  // Return only available rooms
+}, [checkIn, checkOut, allBookings, editingBooking])
+
+// Auto-select first available room
+useEffect(() => {
+  // If current room becomes unavailable
+  // Automatically select first available
+}, [availableRooms])
+```
+
+### Benefits
+- ✅ **No Double-Bookings**: Prevents accidental conflicts
+- ✅ **Clear Availability**: Users see exactly which rooms are free
+- ✅ **Better UX**: Instant feedback on room availability
+- ✅ **Data Integrity**: Maintains booking database consistency
+- ✅ **Edit Safety**: Current room remains selectable when editing
+
+### Edge Cases Handled
+1. **No dates selected**: Shows all rooms
+2. **All rooms booked**: Disables form, shows error message
+3. **Editing booking**: Excludes own booking from conflict check
+4. **Room becomes unavailable**: Auto-selects first available room
+5. **Same-day turnover**: Checkout date = next checkin is allowed (no conflict)
+
+---
+
 ## [2.1.0] - 2026-01-05
 
 ### Major Changes
