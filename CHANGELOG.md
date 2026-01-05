@@ -2,6 +2,260 @@
 
 All notable changes to the Rental Booking Manager project are documented here.
 
+## [2.1.0] - 2026-01-05
+
+### Major Changes
+
+This release adds Aadhaar card image upload with secure storage, advanced filtering, booking detail views, and critical bug fixes.
+
+---
+
+## 📸 Feature: Aadhaar Card Image Upload
+
+### Problem Solved
+Previously, only Aadhaar numbers could be entered as text. Hotels and rental properties need to maintain physical/digital copies of government IDs for compliance and verification.
+
+### Solution
+Secure image upload system for Aadhaar cards using Supabase Storage with signed URLs.
+
+### How It Works
+
+#### Upload Process
+1. **Toggle Option**: Each guest (primary + additional) has a toggle switch
+   - **Enter Number**: Traditional text input
+   - **Upload Image**: File upload option
+2. **File Validation**: Only JPEG, PNG, WebP images up to 5MB
+3. **Secure Storage**: Images stored in private Supabase Storage bucket
+4. **Path Storage**: Database stores file path (not public URL)
+
+#### Security Features
+- ✅ **Private Bucket**: Images cannot be accessed via direct URLs
+- ✅ **Signed URLs**: Temporary access URLs (expire in 1 hour)
+- ✅ **Server-Side Generation**: Only authenticated users can generate URLs
+- ✅ **Automatic Cleanup**: Images deleted when booking is removed
+
+#### Database Schema
+```sql
+ALTER TABLE bookings ADD COLUMN aadhaar_image_url TEXT;
+```
+
+JSONB structure for additional guests:
+```json
+{
+  "name": "Mrs. Priya Gupta",
+  "aadhaar": "9876-5432-1098",
+  "aadhaarImageUrl": "BK0001/BK0001_1_1767586437544.jpeg",
+  "phone": "+91 98765 43210"
+}
+```
+
+#### UI Features
+- Toggle switch between number and image input
+- File upload with instant preview
+- Success indicator showing uploaded filename
+- Image icon (📷) in bookings table when image exists
+- Full image preview in View Details modal
+- Click to open in new tab (with signed URL)
+
+### Files Changed
+- `app/api/upload-aadhaar/route.ts` - NEW - Handles image uploads
+- `app/api/aadhaar-image/route.ts` - NEW - Generates signed URLs
+- `lib/supabase.ts` - Added upload/delete/signed URL helpers
+- `components/BookingForm.tsx` - Image upload UI
+- `components/BookingsTable.tsx` - Image indicator and preview
+- Database migration: `add_aadhaar_image_support`
+
+---
+
+## 📋 Feature: Booking Details View Modal
+
+### Problem Solved
+Users had to edit a booking to see full details. No way to view complete information including all guest details and images without modifying.
+
+### Solution
+Comprehensive view-only modal showing all booking information.
+
+### Features
+- **Basic Information**: ID, date, platform, room number
+- **Stay Details**: Check-in, check-out, nights
+- **Payment Details**: Rate per night, total, custom pricing breakdown
+- **Primary Guest**: Name, phone, Aadhaar, image preview
+- **Additional Guests**: All guest details with images
+- **Actions**: Quick access to edit from modal
+- **Responsive**: Mobile-friendly scrollable design
+
+### UI Features
+- Full-screen modal with sticky header/footer
+- Loading spinner while fetching signed URLs
+- Click images to open in new tab
+- "Edit Booking" button for quick edits
+- Custom pricing breakdown display
+- Guest count indicator
+
+### Files Changed
+- `components/BookingsTable.tsx` - Added modal UI (lines 394-643)
+- Added "View" button to all bookings
+
+---
+
+## 🔍 Feature: Advanced Filtering System
+
+### Problem Solved
+With growing number of bookings, finding specific records was difficult. Only basic search by name/Aadhaar was available.
+
+### Solution
+Multi-criteria filtering system with search and filters.
+
+### Filter Options
+1. **Search Bar**: Search by name, ID, phone, Aadhaar, or amount
+2. **Platform Filter**: Filter by Airbnb, Goibibo, MakeMyTrip, Agoda, Offline
+3. **Room Filter**: Filter by specific room ID
+4. **Date Range**: Filter by booking date (from/to)
+5. **Clear Filters**: One-click to reset all filters
+
+### Features
+- Live filter count: "Showing X of Y bookings"
+- Responsive grid layout (1 col mobile, 2 tablet, 4 desktop)
+- Clear filters button appears when filters active
+- Filters persist during session
+
+### Files Changed
+- `components/BookingsTable.tsx` - Added filter state and UI (lines 67-139)
+
+---
+
+## 🐛 Bug Fixes
+
+### Fixed: Edit Booking Not Populating Form
+**Problem**: Clicking "Edit" on a booking did nothing - form remained empty.
+
+**Root Cause**: BookingForm wasn't watching for `editingBooking` prop changes.
+
+**Solution**: Added `useEffect` hook to update all form state when editing:
+```typescript
+useEffect(() => {
+  if (editingBooking) {
+    setFormData({ ...editingBooking });
+    setAdditionalGuests(editingBooking.additionalGuests || []);
+    setCustomDailyRates(editingBooking.customDailyRates || {});
+    // ... etc
+  }
+}, [editingBooking]);
+```
+
+**Files Changed**: `components/BookingForm.tsx` (lines 85-106)
+
+---
+
+### Fixed: Aadhaar Images Not Deleted with Booking
+**Problem**: When deleting a booking, Aadhaar images remained in Supabase Storage, wasting space and creating orphaned files.
+
+**Root Cause**: DELETE handler only removed database record, not storage files.
+
+**Solution**: Enhanced delete handler to:
+1. Fetch booking before deletion
+2. Extract all image paths (primary + additional guests)
+3. Delete all images from storage
+4. Then delete database record
+
+**Features**:
+- Handles both old public URLs and new paths
+- Backward compatible with existing data
+- Graceful failure (continues if image deletion fails)
+- Deletes entire folder structure
+
+**Files Changed**: `app/api/bookings/[id]/route.ts` (lines 60-155)
+
+---
+
+## 🔧 Technical Improvements
+
+### Supabase Storage Configuration
+- Created `aadhaar-cards` bucket with private access
+- Applied Row Level Security policies
+- Configured for authenticated-only access
+
+### Signed URL Implementation
+- Server-side signed URL generation
+- 1-hour expiration for security
+- Automatic path extraction (handles old URLs)
+- Loading states during URL generation
+
+### Type Safety
+- Added `GuestInfoWithFile` interface for form state
+- Proper TypeScript types for all new features
+- ESLint compliance maintained
+
+### Performance
+- Lazy loading of signed URLs (only when viewing)
+- Efficient filter operations (client-side)
+- Optimized image storage paths
+
+---
+
+## 📦 Dependencies
+
+No new dependencies added. All features use existing packages:
+- `@supabase/supabase-js` (existing)
+- Next.js 15 built-in features
+
+---
+
+## 🧪 Testing Checklist
+
+### Aadhaar Image Upload
+- [ ] Upload image for primary guest
+- [ ] Upload image for additional guest
+- [ ] Toggle between number and image input
+- [ ] Verify file size validation (reject >5MB)
+- [ ] Verify file type validation (only JPEG/PNG/WebP)
+- [ ] Check image appears in bookings table (icon)
+- [ ] View image in details modal
+- [ ] Open image in new tab
+
+### Security
+- [ ] Verify bucket is private (direct URL fails)
+- [ ] Confirm signed URLs work
+- [ ] Confirm signed URLs expire after 1 hour
+- [ ] Verify images deleted when booking deleted
+
+### Filters
+- [ ] Search by name
+- [ ] Search by phone
+- [ ] Search by Aadhaar
+- [ ] Filter by platform
+- [ ] Filter by room
+- [ ] Filter by date range
+- [ ] Clear all filters
+
+### Bug Fixes
+- [ ] Click edit - form populates correctly
+- [ ] Delete booking - images removed from storage
+- [ ] Edit booking with images - images preserved
+
+---
+
+## 🚀 Migration Notes
+
+### Existing Bookings
+Existing bookings without images will continue to work normally. The `aadhaarImageUrl` field is optional.
+
+### Old Public URLs
+System handles both:
+- Old format: `https://...supabase.co/storage/v1/object/public/aadhaar-cards/...`
+- New format: `BK0001/BK0001_primary_123456.jpeg` (path only)
+
+Backward compatibility maintained for all existing data.
+
+---
+
+## 📚 API Routes Added
+
+- `GET /api/aadhaar-image?path={path}` - Generate signed URL
+- `POST /api/upload-aadhaar` - Upload Aadhaar image
+
+---
+
 ## [2.0.0] - 2026-01-05
 
 ### Major Changes

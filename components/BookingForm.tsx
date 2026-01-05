@@ -3,6 +3,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Booking, ROOM_IDS, GuestInfo } from '@/types';
 
+// Extended guest info for form handling (includes file upload state)
+interface GuestInfoWithFile extends GuestInfo {
+  aadhaarFile?: File;
+  aadhaarInputType?: 'number' | 'image';
+}
+
 interface BookingFormProps {
   onSuccess: () => void;
   editingBooking?: Booking | null;
@@ -22,7 +28,7 @@ export default function BookingForm({ onSuccess, editingBooking, onCancel }: Boo
     checkOut: editingBooking?.checkOut || '',
   });
 
-  const [additionalGuests, setAdditionalGuests] = useState<GuestInfo[]>(
+  const [additionalGuests, setAdditionalGuests] = useState<GuestInfoWithFile[]>(
     editingBooking?.additionalGuests || []
   );
   const [useCustomRates, setUseCustomRates] = useState(false);
@@ -31,6 +37,15 @@ export default function BookingForm({ onSuccess, editingBooking, onCancel }: Boo
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Aadhaar upload states
+  const [primaryAadhaarInputType, setPrimaryAadhaarInputType] = useState<'number' | 'image'>(
+    editingBooking?.aadhaarImageUrl ? 'image' : 'number'
+  );
+  const [primaryAadhaarFile, setPrimaryAadhaarFile] = useState<File | null>(null);
+  const [primaryAadhaarImageUrl, setPrimaryAadhaarImageUrl] = useState<string>(
+    editingBooking?.aadhaarImageUrl || ''
+  );
 
   // Calculate nights
   const totalNights = useMemo(() => {
@@ -67,6 +82,29 @@ export default function BookingForm({ onSuccess, editingBooking, onCancel }: Boo
     return (parseFloat(formData.ratePerNight) || 0) * totalNights;
   }, [useCustomRates, customDailyRates, formData.ratePerNight, totalNights, dateRange]);
 
+  // Update form when editingBooking changes
+  useEffect(() => {
+    if (editingBooking) {
+      setFormData({
+        date: editingBooking.date || new Date().toISOString().split('T')[0],
+        name: editingBooking.name || '',
+        aadhaar: editingBooking.aadhaar || '',
+        phone: editingBooking.phone || '',
+        ratePerNight: editingBooking.ratePerNight || '',
+        platform: editingBooking.platform || 'Airbnb',
+        roomId: editingBooking.roomId || ROOM_IDS[0],
+        checkIn: editingBooking.checkIn || '',
+        checkOut: editingBooking.checkOut || '',
+      });
+      setAdditionalGuests(editingBooking.additionalGuests || []);
+      setCustomDailyRates(editingBooking.customDailyRates || {});
+      setUseCustomRates(!!(editingBooking.customDailyRates && Object.keys(editingBooking.customDailyRates).length > 0));
+      setPrimaryAadhaarInputType(editingBooking.aadhaarImageUrl ? 'image' : 'number');
+      setPrimaryAadhaarImageUrl(editingBooking.aadhaarImageUrl || '');
+      setPrimaryAadhaarFile(null);
+    }
+  }, [editingBooking]);
+
   // Initialize custom rates when switching to custom mode or dates change
   useEffect(() => {
     if (useCustomRates && dateRange.length > 0) {
@@ -97,12 +135,80 @@ export default function BookingForm({ onSuccess, editingBooking, onCancel }: Boo
     setAdditionalGuests(updated);
   };
 
+  // Handle file upload for guest
+  const handleGuestFileUpload = async (index: number, file: File | null) => {
+    if (!file) return;
+
+    const updated = [...additionalGuests];
+    // Temporarily store file reference in a way we can retrieve it later
+    // We'll upload during form submission
+    updated[index] = { ...updated[index], aadhaarFile: file };
+    setAdditionalGuests(updated);
+  };
+
+  // Upload Aadhaar image helper
+  const uploadAadhaarImage = async (file: File, bookingId: string, guestType: 'primary' | number): Promise<string | null> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('bookingId', bookingId);
+    formData.append('guestType', guestType.toString());
+
+    try {
+      const response = await fetch('/api/upload-aadhaar', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to upload image');
+      }
+
+      return data.url;
+    } catch (error) {
+      console.error('Upload error:', error);
+      return null;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
+      // Generate temp booking ID for file uploads (use existing ID if editing)
+      const tempBookingId = editingBooking?.id || `TEMP_${Date.now()}`;
+
+      // Upload primary guest Aadhaar image if file is selected
+      let primaryImageUrl = primaryAadhaarImageUrl;
+      if (primaryAadhaarFile && primaryAadhaarInputType === 'image') {
+        const uploadedUrl = await uploadAadhaarImage(primaryAadhaarFile, tempBookingId, 'primary');
+        if (uploadedUrl) {
+          primaryImageUrl = uploadedUrl;
+        } else {
+          throw new Error('Failed to upload primary guest Aadhaar image');
+        }
+      }
+
+      // Upload additional guests' Aadhaar images
+      const updatedAdditionalGuests = await Promise.all(
+        additionalGuests.map(async (guest, index) => {
+          if (guest.aadhaarFile) {
+            const uploadedUrl = await uploadAadhaarImage(guest.aadhaarFile, tempBookingId, index);
+            if (uploadedUrl) {
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              const { aadhaarFile, aadhaarInputType, ...guestData } = guest;
+              return { ...guestData, aadhaarImageUrl: uploadedUrl };
+            }
+          }
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { aadhaarFile, aadhaarInputType, ...guestData } = guest;
+          return guestData;
+        })
+      );
+
       const url = editingBooking
         ? `/api/bookings/${editingBooking.id}`
         : '/api/bookings';
@@ -111,7 +217,8 @@ export default function BookingForm({ onSuccess, editingBooking, onCancel }: Boo
 
       const payload = {
         ...formData,
-        additionalGuests,
+        aadhaarImageUrl: primaryAadhaarInputType === 'image' ? primaryImageUrl : undefined,
+        additionalGuests: updatedAdditionalGuests,
         customDailyRates: useCustomRates ? customDailyRates : undefined,
       };
 
@@ -145,6 +252,9 @@ export default function BookingForm({ onSuccess, editingBooking, onCancel }: Boo
         setAdditionalGuests([]);
         setCustomDailyRates({});
         setUseCustomRates(false);
+        setPrimaryAadhaarFile(null);
+        setPrimaryAadhaarImageUrl('');
+        setPrimaryAadhaarInputType('number');
       }
 
       onSuccess();
@@ -201,19 +311,66 @@ export default function BookingForm({ onSuccess, editingBooking, onCancel }: Boo
         </div>
 
         {/* Primary Guest Aadhaar */}
-        <div>
-          <label htmlFor="aadhaar" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-            Aadhaar Card No *
-          </label>
-          <input
-            type="text"
-            id="aadhaar"
-            required
-            value={formData.aadhaar}
-            onChange={(e) => setFormData({ ...formData, aadhaar: e.target.value })}
-            className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
-            placeholder="XXXX-XXXX-XXXX"
-          />
+        <div className="sm:col-span-2">
+          <div className="flex items-center justify-between mb-2">
+            <label htmlFor="aadhaar" className="block text-xs sm:text-sm font-medium text-gray-700">
+              Aadhaar Card {primaryAadhaarInputType === 'number' ? 'Number' : 'Image'} *
+            </label>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-600">Enter Number</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setPrimaryAadhaarInputType(prev => prev === 'number' ? 'image' : 'number');
+                  setPrimaryAadhaarFile(null);
+                }}
+                className={`relative inline-flex h-5 w-10 items-center rounded-full transition ${
+                  primaryAadhaarInputType === 'image' ? 'bg-blue-600' : 'bg-gray-300'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+                    primaryAadhaarInputType === 'image' ? 'translate-x-5' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+              <span className="text-xs text-gray-600">Upload Image</span>
+            </div>
+          </div>
+
+          {primaryAadhaarInputType === 'number' ? (
+            <input
+              type="text"
+              id="aadhaar"
+              required
+              value={formData.aadhaar}
+              onChange={(e) => setFormData({ ...formData, aadhaar: e.target.value })}
+              className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+              placeholder="XXXX-XXXX-XXXX"
+            />
+          ) : (
+            <div>
+              <input
+                type="file"
+                id="aadhaar-image"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setPrimaryAadhaarFile(file);
+                    setFormData({ ...formData, aadhaar: file.name }); // Set some value for required field
+                  }
+                }}
+                className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+              />
+              {primaryAadhaarFile && (
+                <p className="mt-1 text-xs text-green-600">✓ {primaryAadhaarFile.name}</p>
+              )}
+              {primaryAadhaarImageUrl && !primaryAadhaarFile && (
+                <p className="mt-1 text-xs text-blue-600">✓ Image already uploaded</p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Primary Guest Phone */}
@@ -279,18 +436,66 @@ export default function BookingForm({ onSuccess, editingBooking, onCancel }: Boo
                       placeholder="Guest name"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                      Aadhaar *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={guest.aadhaar}
-                      onChange={(e) => updateGuest(index, 'aadhaar', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
-                      placeholder="XXXX-XXXX-XXXX"
-                    />
+                  <div className="sm:col-span-2">
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs sm:text-sm font-medium text-gray-700">
+                        Aadhaar {guest.aadhaarInputType === 'image' ? 'Image' : 'Number'} *
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = [...additionalGuests];
+                          const currentType = updated[index].aadhaarInputType || 'number';
+                          updated[index] = {
+                            ...updated[index],
+                            aadhaarInputType: currentType === 'number' ? 'image' : 'number',
+                            aadhaarFile: undefined
+                          };
+                          setAdditionalGuests(updated);
+                        }}
+                        className={`relative inline-flex h-4 w-8 items-center rounded-full transition ${
+                          guest.aadhaarInputType === 'image' ? 'bg-blue-600' : 'bg-gray-300'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-3 w-3 transform rounded-full bg-white transition ${
+                            guest.aadhaarInputType === 'image' ? 'translate-x-4' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {guest.aadhaarInputType === 'image' ? (
+                      <div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              handleGuestFileUpload(index, file);
+                              updateGuest(index, 'aadhaar', file.name); // Set some value for required field
+                            }
+                          }}
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm"
+                        />
+                        {guest.aadhaarFile && (
+                          <p className="mt-1 text-xs text-green-600">✓ {guest.aadhaarFile.name}</p>
+                        )}
+                        {guest.aadhaarImageUrl && !guest.aadhaarFile && (
+                          <p className="mt-1 text-xs text-blue-600">✓ Image uploaded</p>
+                        )}
+                      </div>
+                    ) : (
+                      <input
+                        type="text"
+                        required
+                        value={guest.aadhaar}
+                        onChange={(e) => updateGuest(index, 'aadhaar', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                        placeholder="XXXX-XXXX-XXXX"
+                      />
+                    )}
                   </div>
                   <div>
                     <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">

@@ -1,6 +1,7 @@
 export interface GuestInfo {
   name: string;
   aadhaar: string;
+  aadhaarImageUrl?: string; // Optional: URL to uploaded Aadhaar card image
   phone: string;
 }
 
@@ -8,7 +9,8 @@ export interface Booking {
   id: string;
   date: string;
   name: string; // Primary guest name
-  aadhaar: string; // Primary guest aadhaar
+  aadhaar: string; // Primary guest aadhaar number
+  aadhaarImageUrl?: string; // Primary guest aadhaar image URL (optional)
   phone: string; // Primary guest phone
   additionalGuests?: GuestInfo[]; // Additional guests staying in the same room
   payment: string; // Total amount (calculated)

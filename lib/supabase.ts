@@ -35,6 +35,7 @@ export function getSupabaseClient() {
 export interface GuestInfo {
   name: string;
   aadhaar: string;
+  aadhaarImageUrl?: string;
   phone: string;
 }
 
@@ -43,7 +44,8 @@ export interface Booking {
   id: string;
   date: string;
   name: string; // Primary guest name
-  aadhaar: string; // Primary guest aadhaar
+  aadhaar: string; // Primary guest aadhaar number
+  aadhaarImageUrl?: string; // Primary guest aadhaar image URL
   phone: string; // Primary guest phone
   additionalGuests?: GuestInfo[]; // Additional guests
   payment: string; // Total amount (calculated)
@@ -64,6 +66,7 @@ export interface BookingRow {
   date: string;
   name: string;
   aadhaar: string;
+  aadhaar_image_url?: string;
   phone: string;
   additional_guests?: GuestInfo[];
   payment: number;
@@ -85,6 +88,7 @@ export function dbRowToBooking(row: BookingRow): Booking {
     date: row.date,
     name: row.name,
     aadhaar: row.aadhaar,
+    aadhaarImageUrl: row.aadhaar_image_url,
     phone: row.phone,
     additionalGuests: row.additional_guests || [],
     payment: row.payment.toString(),
@@ -107,6 +111,7 @@ export function bookingToDbRow(booking: Omit<Booking, 'id' | 'createdAt' | 'upda
     date: booking.date,
     name: booking.name,
     aadhaar: booking.aadhaar,
+    aadhaar_image_url: booking.aadhaarImageUrl,
     phone: booking.phone,
     additional_guests: booking.additionalGuests,
     payment: parseFloat(booking.payment),
@@ -173,4 +178,82 @@ export function getDateRange(checkIn: string, checkOut: string): string[] {
   }
 
   return dates;
+}
+
+// Helper to upload Aadhaar image to Supabase Storage
+export async function uploadAadhaarImage(
+  file: File,
+  bookingId: string,
+  guestType: 'primary' | number // 'primary' for main guest, number for additional guest index
+): Promise<{ url: string; path: string } | { error: string }> {
+  try {
+    const supabase = getSupabaseClient();
+
+    // Generate unique filename
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${bookingId}_${guestType}_${Date.now()}.${fileExt}`;
+    const filePath = `${bookingId}/${fileName}`;
+
+    // Upload file to storage
+    const { data, error } = await supabase.storage
+      .from('aadhaar-cards')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) {
+      console.error('Upload error:', error);
+      return { error: error.message };
+    }
+
+    // Store the path instead of public URL for security
+    // We'll generate signed URLs when needed
+    return { url: data.path, path: data.path };
+  } catch (error) {
+    console.error('Upload exception:', error);
+    return { error: 'Failed to upload image' };
+  }
+}
+
+// Helper to delete Aadhaar image from Supabase Storage
+export async function deleteAadhaarImage(filePath: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = getSupabaseClient();
+
+    const { error } = await supabase.storage
+      .from('aadhaar-cards')
+      .remove([filePath]);
+
+    if (error) {
+      console.error('Delete error:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Delete exception:', error);
+    return { success: false, error: 'Failed to delete image' };
+  }
+}
+
+// Helper to get signed URL for Aadhaar image (for secure access)
+export async function getAadhaarImageUrl(filePath: string, expiresIn: number = 3600): Promise<{ url: string } | { error: string }> {
+  try {
+    const supabase = getSupabaseClient();
+
+    const { data, error } = await supabase.storage
+      .from('aadhaar-cards')
+      .createSignedUrl(filePath, expiresIn);
+
+    if (error) {
+      console.error('Get URL error:', error);
+      return { error: error.message };
+    }
+
+    return { url: data.signedUrl };
+  } catch (error) {
+    console.error('Get URL exception:', error);
+    return { error: 'Failed to get image URL' };
+  }
 }
