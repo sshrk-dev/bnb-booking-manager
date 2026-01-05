@@ -1,10 +1,25 @@
 import { NextResponse } from 'next/server';
-import { getAllBookings } from '@/lib/googleSheets';
+import { getSupabaseClient, dbRowToBooking, type BookingRow } from '@/lib/supabase';
 import { BookingStats } from '@/types';
 
 export async function GET() {
   try {
-    const bookings = await getAllBookings();
+    const supabase = getSupabaseClient();
+
+    const { data, error } = await supabase
+      .from('bookings')
+      .select('*')
+      .order('date', { ascending: false });
+
+    if (error) {
+      console.error('Supabase error fetching bookings:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch bookings', details: error.message },
+        { status: 500 }
+      );
+    }
+
+    const bookings = (data as BookingRow[]).map(dbRowToBooking);
 
     // Calculate total revenue (convert payment strings to numbers)
     const totalRevenue = bookings.reduce((sum, booking) => {

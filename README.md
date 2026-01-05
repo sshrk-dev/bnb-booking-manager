@@ -1,13 +1,13 @@
 # Rental Booking Manager
 
-A web application to manage rental property bookings from multiple platforms (Airbnb, Goibibo, MakeMyTrip, Agoda) using Google Sheets as a database.
+A web application to manage rental property bookings from multiple platforms (Airbnb, Goibibo, MakeMyTrip, Agoda) using Supabase as a database.
 
 ## Features
 
 ✅ **Add/Edit/Delete Bookings** - Full CRUD operations
 ✅ **Dashboard Analytics** - Total bookings, revenue, platform breakdown
 ✅ **Search & Filter** - Find bookings quickly
-✅ **Google Sheets Integration** - No database setup required
+✅ **Supabase Database** - Scalable PostgreSQL database with real-time capabilities
 ✅ **Free Hosting** - Deploy to Vercel at no cost
 ✅ **Mobile Responsive** - Works on all devices
 
@@ -19,13 +19,14 @@ A web application to manage rental property bookings from multiple platforms (Ai
 npm install
 ```
 
-### 2. Set Up Google Sheets API
+### 2. Set Up Supabase
 
-Follow the detailed guide in [SETUP.md](./SETUP.md) to:
-- Create a Google Cloud project
-- Enable Google Sheets API
-- Create service account credentials
-- Set up your Google Sheet
+1. Go to [https://supabase.com](https://supabase.com) and sign in
+2. Your project is already set up: **sshrk** (ap-south-1)
+3. Get your credentials from Supabase Dashboard:
+   - Go to Project Settings > API
+   - Copy the **Project URL**
+   - Copy the **service_role** key (keep this secret!)
 
 ### 3. Configure Environment Variables
 
@@ -36,8 +37,10 @@ cp .env.local.example .env.local
 ```
 
 Edit `.env.local` with your:
-- Google service account credentials (JSON)
-- Google Sheet ID
+- Supabase Project URL (from step 2)
+- Supabase Service Role Key (from step 2)
+- Authentication credentials (username/password)
+- JWT secret (generate with: `openssl rand -base64 32`)
 
 ### 4. Run Development Server
 
@@ -81,13 +84,13 @@ Or connect your GitHub repo to Vercel for automatic deployments.
 - **Next.js 15** - React framework with App Router
 - **TypeScript** - Type safety
 - **Tailwind CSS** - Styling
-- **Google Sheets API** - Database
+- **Supabase** - PostgreSQL database with real-time capabilities
 - **Vercel** - Hosting
 
 ## Documentation
 
-- [📖 Complete Setup Guide](./SETUP.md) - Step-by-step instructions
 - [🔧 Environment Variables](./.env.local.example) - Configuration template
+- [📊 Database Schema](./SUPABASE.md) - Database structure and migrations
 
 ## Screenshots
 

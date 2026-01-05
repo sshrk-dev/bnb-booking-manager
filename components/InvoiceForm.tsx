@@ -76,13 +76,13 @@ export default function InvoiceForm({ onGenerate }: InvoiceFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">Create Invoice</h2>
+    <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+      <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-800">Create Invoice</h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         {/* Guest Name */}
-        <div className="md:col-span-2">
-          <label htmlFor="guestName" className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="sm:col-span-2">
+          <label htmlFor="guestName" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
             Guest Name *
           </label>
           <input
@@ -91,14 +91,14 @@ export default function InvoiceForm({ onGenerate }: InvoiceFormProps) {
             required
             value={formData.guestName}
             onChange={(e) => setFormData({ ...formData, guestName: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
             placeholder="Enter guest name"
           />
         </div>
 
         {/* Check-in */}
         <div>
-          <label htmlFor="checkIn" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="checkIn" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
             Check-in Date *
           </label>
           <input
@@ -107,13 +107,13 @@ export default function InvoiceForm({ onGenerate }: InvoiceFormProps) {
             required
             value={formData.checkIn}
             onChange={(e) => setFormData({ ...formData, checkIn: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
           />
         </div>
 
         {/* Check-out */}
         <div>
-          <label htmlFor="checkOut" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="checkOut" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
             Check-out Date *
           </label>
           <input
@@ -122,13 +122,13 @@ export default function InvoiceForm({ onGenerate }: InvoiceFormProps) {
             required
             value={formData.checkOut}
             onChange={(e) => setFormData({ ...formData, checkOut: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
           />
         </div>
 
         {/* Price per Night */}
         <div>
-          <label htmlFor="pricePerNight" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="pricePerNight" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
             Price per Night (₹) *
           </label>
           <input
@@ -138,27 +138,27 @@ export default function InvoiceForm({ onGenerate }: InvoiceFormProps) {
             min="0"
             value={formData.pricePerNight}
             onChange={(e) => setFormData({ ...formData, pricePerNight: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
             placeholder="5000"
           />
         </div>
 
         {/* Calculated Fields */}
-        <div className="bg-gray-50 rounded-md p-4">
-          <p className="text-sm text-gray-600 mb-2">
+        <div className="bg-gray-50 rounded-md p-3 sm:p-4">
+          <p className="text-xs sm:text-sm text-gray-600 mb-2">
             Number of Nights: <span className="font-bold text-gray-900">{nights}</span>
           </p>
-          <p className="text-sm text-gray-600">
-            Total Amount: <span className="font-bold text-gray-900 text-lg">{formatCurrency(totalAmount)}</span>
+          <p className="text-xs sm:text-sm text-gray-600">
+            Total Amount: <span className="font-bold text-gray-900 text-base sm:text-lg">{formatCurrency(totalAmount)}</span>
           </p>
         </div>
       </div>
 
-      <div className="mt-6">
+      <div className="mt-4 sm:mt-6">
         <button
           type="submit"
           disabled={nights <= 0 || !formData.pricePerNight}
-          className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+          className="w-full sm:w-auto bg-blue-600 text-white px-4 sm:px-6 py-2.5 sm:py-2 rounded-md hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed text-sm sm:text-base font-medium"
         >
           Generate Invoice
         </button>

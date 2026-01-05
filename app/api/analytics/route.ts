@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getAllBookings, Booking } from '@/lib/googleSheets';
+import { getSupabaseClient, dbRowToBooking, type Booking, type BookingRow } from '@/lib/supabase';
 
 export async function GET(request: Request) {
   try {
@@ -9,7 +9,22 @@ export async function GET(request: Request) {
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
-    let bookings = await getAllBookings();
+    const supabase = getSupabaseClient();
+
+    const { data, error } = await supabase
+      .from('bookings')
+      .select('*')
+      .order('date', { ascending: false });
+
+    if (error) {
+      console.error('Supabase error fetching bookings:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch bookings', details: error.message },
+        { status: 500 }
+      );
+    }
+
+    let bookings = (data as BookingRow[]).map(dbRowToBooking);
 
     // Apply filters
     if (platform && platform !== 'All') {

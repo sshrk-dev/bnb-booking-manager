@@ -1,10 +1,20 @@
-export interface Booking {
-  id: string;
-  date: string;
+export interface GuestInfo {
   name: string;
   aadhaar: string;
   phone: string;
-  payment: string;
+}
+
+export interface Booking {
+  id: string;
+  date: string;
+  name: string; // Primary guest name
+  aadhaar: string; // Primary guest aadhaar
+  phone: string; // Primary guest phone
+  additionalGuests?: GuestInfo[]; // Additional guests staying in the same room
+  payment: string; // Total amount (calculated)
+  ratePerNight?: string; // Standard nightly rate
+  customDailyRates?: Record<string, number>; // Custom rates per date
+  totalNights?: number; // Number of nights
   platform: 'Airbnb' | 'Goibibo' | 'MakeMyTrip' | 'Agoda' | 'Offline';
   roomId: string;
   checkIn: string;
