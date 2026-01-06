@@ -20,6 +20,7 @@ interface BookingBar {
   startCol: number; // Which column (day) it starts on (1-7)
   span: number; // How many days it spans
   row: number; // Which week row (0-5)
+  lane: number; // Vertical lane (for stacking without overlap)
 }
 
 export default function RoomOccupancy() {
@@ -80,74 +81,131 @@ export default function RoomOccupancy() {
     return dates;
   };
 
-  // Calculate booking bars for horizontal display
+  // Calculate booking bars for horizontal display with lane assignment
   const calculateBookingBars = (calendarDates: Date[]): BookingBar[] => {
-    const bars: BookingBar[] = [];
+    const barsWithoutLanes: Omit<BookingBar, 'lane'>[] = [];
 
+    // Step 1: Create all bar segments
     bookings.forEach(booking => {
       const checkIn = new Date(booking.checkIn);
       const checkOut = new Date(booking.checkOut);
 
-      // Find where this booking appears in the calendar
-      calendarDates.forEach((date, index) => {
-        const dateStr = date.toISOString().split('T')[0];
-        const currentDateObj = new Date(dateStr);
+      // Find start index in calendar
+      const startIndex = calendarDates.findIndex(d =>
+        d.toISOString().split('T')[0] === booking.checkIn
+      );
 
-        // Check if this is the first day of the booking visible in calendar
-        if (currentDateObj.getTime() === checkIn.getTime() ||
-            (index === 0 && currentDateObj < checkIn && checkIn < calendarDates[calendarDates.length - 1])) {
-
-          // Calculate how many days this booking spans in the visible calendar
-          let span = 0;
-          let startIndex = index;
-
-          // If booking started before calendar, find real start
-          if (currentDateObj < checkIn) {
-            startIndex = calendarDates.findIndex(d => d.toISOString().split('T')[0] === booking.checkIn);
-            if (startIndex === -1) return; // Booking not in this month view
-          }
-
-          // Calculate span
-          for (let i = startIndex; i < calendarDates.length; i++) {
-            const d = calendarDates[i];
-            if (d >= checkIn && d < checkOut) {
-              span++;
-            } else if (d >= checkOut) {
-              break;
-            }
-          }
-
+      if (startIndex === -1) {
+        // Check if booking started before calendar but is still active
+        if (checkIn < calendarDates[0] && checkOut > calendarDates[0]) {
+          const span = calendarDates.filter(d => d >= checkIn && d < checkOut).length;
           if (span > 0) {
-            const row = Math.floor(startIndex / 7);
-            const col = startIndex % 7;
-
-            bars.push({
+            const row = 0;
+            barsWithoutLanes.push({
               booking,
-              startCol: col + 1, // CSS grid is 1-indexed
-              span: Math.min(span, 7 - col), // Don't span past end of week
+              startCol: 1,
+              span: Math.min(span, 7),
               row
             });
-
-            // If booking spans into next week(s), create additional bars
-            let remainingSpan = span - (7 - col);
-            let currentRow = row + 1;
-
-            while (remainingSpan > 0 && currentRow < 6) {
-              bars.push({
-                booking,
-                startCol: 1,
-                span: Math.min(remainingSpan, 7),
-                row: currentRow
-              });
-              remainingSpan -= 7;
-              currentRow++;
-            }
           }
         }
+        return;
+      }
+
+      // Calculate total span
+      let span = 0;
+      for (let i = startIndex; i < calendarDates.length; i++) {
+        const d = calendarDates[i];
+        if (d >= checkIn && d < checkOut) {
+          span++;
+        } else if (d >= checkOut) {
+          break;
+        }
+      }
+
+      if (span > 0) {
+        const row = Math.floor(startIndex / 7);
+        const col = startIndex % 7;
+
+        // First segment
+        barsWithoutLanes.push({
+          booking,
+          startCol: col + 1,
+          span: Math.min(span, 7 - col),
+          row
+        });
+
+        // Additional segments if booking spans multiple weeks
+        let remainingSpan = span - (7 - col);
+        let currentRow = row + 1;
+
+        while (remainingSpan > 0 && currentRow < 6) {
+          barsWithoutLanes.push({
+            booking,
+            startCol: 1,
+            span: Math.min(remainingSpan, 7),
+            row: currentRow
+          });
+          remainingSpan -= 7;
+          currentRow++;
+        }
+      }
+    });
+
+    // Step 2: Assign lanes to prevent overlapping
+    // Group bars by row
+    const barsByRow: { [row: number]: Omit<BookingBar, 'lane'>[] } = {};
+    barsWithoutLanes.forEach(bar => {
+      if (!barsByRow[bar.row]) {
+        barsByRow[bar.row] = [];
+      }
+      barsByRow[bar.row].push(bar);
+    });
+
+    // Assign lanes within each row
+    const barsWithLanes: BookingBar[] = [];
+
+    Object.keys(barsByRow).forEach(rowKey => {
+      const rowNum = parseInt(rowKey);
+      const rowBars = barsByRow[rowNum];
+
+      // Sort bars by start column
+      rowBars.sort((a, b) => a.startCol - b.startCol);
+
+      // Track which lanes are occupied at each column position
+      const laneOccupancy: { lane: number; endCol: number }[] = [];
+
+      rowBars.forEach(bar => {
+        // Find the first available lane
+        let assignedLane = 0;
+        const barEndCol = bar.startCol + bar.span - 1;
+
+        // Check existing lanes to see if any are available
+        for (let lane = 0; lane < laneOccupancy.length; lane++) {
+          const occupancy = laneOccupancy.filter(o => o.lane === lane);
+          const isAvailable = occupancy.every(o => o.endCol < bar.startCol);
+
+          if (isAvailable) {
+            assignedLane = lane;
+            break;
+          }
+          assignedLane = lane + 1;
+        }
+
+        // Record this bar's occupancy
+        laneOccupancy.push({
+          lane: assignedLane,
+          endCol: barEndCol
+        });
+
+        barsWithLanes.push({
+          ...bar,
+          lane: assignedLane
+        });
       });
     });
 
-    return bars;
+    return barsWithLanes;
   };
 
   // Navigate to previous month
@@ -289,7 +347,7 @@ export default function RoomOccupancy() {
                         const isToday = dateStr === today;
                         const isPast = date < new Date(today);
 
-                        let cellClass = 'min-h-[80px] p-2 border-r border-b border-gray-200 ';
+                        let cellClass = 'min-h-[120px] p-2 border-r border-b border-gray-200 ';
 
                         if (!isCurrentMonth) {
                           cellClass += 'bg-gray-50 ';
@@ -315,7 +373,7 @@ export default function RoomOccupancy() {
                       <div className="grid grid-cols-7 h-full">
                         {/* Create grid cells for positioning */}
                         {calendarDates.map((_, index) => (
-                          <div key={index} className="relative h-[80px]">
+                          <div key={index} className="relative h-[120px]">
                             {/* Booking bars for this cell */}
                             {bookingBars
                               .filter(bar => {
@@ -335,7 +393,7 @@ export default function RoomOccupancy() {
                                     className={`absolute ${roomColor.bg} ${roomColor.text} rounded-md px-2 py-1 text-xs font-medium shadow-sm hover:shadow-md transition cursor-pointer pointer-events-auto`}
                                     style={{
                                       width: `calc(${bar.span * 100}% - 4px)`,
-                                      top: `${30 + barIndex * 22}px`,
+                                      top: `${30 + bar.lane * 24}px`,
                                       left: '2px',
                                       zIndex: 10
                                     }}
