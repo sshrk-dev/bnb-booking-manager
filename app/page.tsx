@@ -87,6 +87,16 @@ export default function Home() {
             </div>
             <div className="flex items-center gap-2 sm:gap-4">
               <Link
+                href="/occupancy"
+                className="flex-1 sm:flex-none bg-purple-600 text-white px-3 sm:px-6 py-2 sm:py-3 rounded-md hover:bg-purple-700 transition flex items-center justify-center gap-1 sm:gap-2 text-sm sm:text-base"
+              >
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span className="hidden sm:inline">Rooms</span>
+                <span className="sm:hidden">Cal</span>
+              </Link>
+              <Link
                 href="/invoice"
                 className="flex-1 sm:flex-none bg-green-600 text-white px-3 sm:px-6 py-2 sm:py-3 rounded-md hover:bg-green-700 transition flex items-center justify-center gap-1 sm:gap-2 text-sm sm:text-base"
               >

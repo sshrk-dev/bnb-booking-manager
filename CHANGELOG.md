@@ -2,6 +2,211 @@
 
 All notable changes to the Rental Booking Manager project are documented here.
 
+## [2.3.0] - 2026-01-06
+
+### Major Changes
+
+This release adds a visual room occupancy calendar with horizontal booking bars, unique room colors, and interactive booking details.
+
+---
+
+## 📅 Feature: Room Occupancy Calendar
+
+### Problem Solved
+Previously, there was no easy way to visualize which rooms were booked on specific dates. Users had to:
+- Manually check each booking's dates
+- Cross-reference multiple bookings to find conflicts
+- Rely on the booking form's availability filter (only works when creating/editing)
+
+### Solution
+Dedicated calendar page showing all rooms' occupancy status across an entire month with visual indicators.
+
+### How It Works
+
+#### Calendar View
+- **Monthly Grid**: Calendar displays 6 weeks (42 days) to show complete months
+- **Unified Calendar**: Single calendar showing ALL bookings from all rooms together
+- **Date Columns**: Days of the week across the top (Sun-Sat)
+- **Real-time Data**: Fetches all bookings and displays them on the calendar
+- **Multiple Bookings Per Day**: Each date cell can show multiple bookings (one per room)
+
+#### Visual Indicators
+
+**Unique Room Colors**:
+- 🔵 **SS1020**: Blue
+- 🟣 **SS1022**: Purple
+- 🟢 **SS1124**: Green
+- 🟠 **SS1125**: Orange
+- 🌸 **SS1003**: Pink
+- 🔷 **SS715**: Teal
+
+**Horizontal Booking Bars**:
+- Multi-day bookings display as horizontal bars spanning across dates
+- Single continuous bar for each booking (like Airbnb calendar)
+- Bar width automatically adjusts based on booking duration
+- Wraps to next week if booking spans multiple weeks
+
+**Other Visual Elements**:
+- ⚪ **White Background**: No bookings for this day
+- ⚪ **Gray Background**: Past dates (unavailable)
+- ⚪ **Light Gray**: Dates from other months (outside current view)
+- 🔵 **Blue Circle**: Today's date (highlighted with colored circle around date number)
+
+**Interactive Features**:
+- **Hover**: Shows tooltip with booking details (name, platform, room, dates)
+- **Click Booking Bar**: Opens detailed modal with complete booking information
+- **Booking Detail Modal**: Displays all guest information, payment details, and stay dates
+- **Month Navigation**: Previous/Next buttons to browse months
+- **Go to Today**: Quick button to return to current month
+
+#### Example Display
+```
+Calendar for January 2026
+
+Sun          Mon          Tue          Wed          Thu          Fri          Sat
+[1]          [2]          [3]          [4]          [5]          [6]          [7]
+             [SS1020 - John +1]────────────────────>
+                          [SS1022 - Mary]──>
+
+[8]          [9]          [10]         [11]         [12]         [13]         [14]
+[SS1124 - Sarah]                       [SS1020 - Mike]──>
+                                       [SS1022 - Amy]────────────>
+```
+
+Visual Representation:
+```
+   6         7         8         9        (dates)
+   ┌─────────┬─────────┬─────────┬─────────┐
+   │  🔵 SS1020 - Prerna +1      │         │  (Blue bar spans 3 days)
+   │                   🟣 SS1022 - Sudh... │  (Purple bar spans 2 days)
+   └─────────┴─────────┴─────────┴─────────┘
+```
+
+Features:
+- Horizontal bars span multiple dates
+- Each room has unique color (Blue, Purple, Green, Orange, Pink, Teal)
+- Bar shows: Room ID + Guest first name + additional guest count
+- Click any bar to see full booking details
+- Bars automatically wrap to next week if booking continues
+
+#### Occupancy Summary
+Bottom section shows total bookings per room:
+```
+SS1020: 12 bookings
+SS1022: 8 bookings
+SS1124: 15 bookings
+...
+```
+
+### UI Features
+
+#### Header
+- **Title**: "Room Occupancy Calendar"
+- **Navigation**: Back to home, Logout buttons
+- **Responsive**: Mobile-friendly design
+
+#### Calendar Controls
+- **Previous Month** (← arrow): Navigate to earlier months
+- **Current Month/Year**: Displayed prominently
+- **Go to Today**: Instant return to current month
+- **Next Month** (→ arrow): Navigate to future months
+
+#### Legend
+Clear visual guide explaining color codes:
+- Available (green box)
+- Booked (blue box)
+- Past Date (gray box)
+- Today (blue border)
+
+#### Responsive Design
+- **Desktop**: Full calendar grid with all details
+- **Tablet**: Optimized spacing, readable text
+- **Mobile**: Horizontal scroll for calendar, compact cells
+
+### Technical Implementation
+
+#### Files Created
+- `app/occupancy/page.tsx` - NEW - Complete occupancy calendar page
+
+#### Files Modified
+- `app/page.tsx` - Added "Rooms" navigation button
+
+#### Key Logic
+```typescript
+// Get all bookings for a specific date (all rooms)
+const getBookingsForDate = (date) => {
+  // Returns array of all bookings for this date
+  // Filters bookings where: checkIn <= date < checkOut
+  // Used to display multiple room bookings on one calendar cell
+}
+
+// Generate 42 days (6 weeks) for calendar grid
+const generateCalendarDates = () => {
+  // Starts from first day of month
+  // Includes previous month's trailing days
+  // Includes next month's leading days
+  // Returns array of 42 Date objects
+}
+```
+
+#### Navigation Path
+Home → "Rooms" button (purple) → Room Occupancy Calendar
+
+### Benefits
+- ✅ **Visual Overview**: See all room bookings at a glance
+- ✅ **Conflict Detection**: Instantly identify overlapping bookings
+- ✅ **Planning**: Easier to plan future bookings
+- ✅ **Guest Names**: Quick identification of who's staying when
+- ✅ **Multi-Room Management**: Compare occupancy across all rooms
+- ✅ **Historical View**: Navigate to past months to review bookings
+- ✅ **Future Planning**: Check availability for upcoming months
+
+### Use Cases
+
+**Scenario 1: Check Weekend Availability**
+```
+User navigates to occupancy page
+Selects upcoming weekend dates
+Sees at a glance which rooms are free
+Makes informed booking decision
+```
+
+**Scenario 2: Identify Busy Periods**
+```
+Property manager reviews next month
+Sees multiple blue cells (booked days)
+Identifies high-occupancy period
+Plans staffing accordingly
+```
+
+**Scenario 3: Quick Room Check**
+```
+Guest calls about Jan 15-20
+Opens calendar to January
+Jan 15 shows: SS1020 (John), SS1124 (Sarah)
+Instantly knows 4 rooms available (SS1022, SS1125, SS1003, SS715)
+Provides accurate information immediately
+```
+
+### Edge Cases Handled
+1. **Month Transitions**: Properly displays days from adjacent months
+2. **Past Dates**: Grayed out to indicate unavailability
+3. **Today Highlighting**: Always visible regardless of bookings
+4. **Long Guest Names**: Truncated to fit in cells (shows first name only)
+5. **No Bookings**: Shows all green (available) calendar
+6. **Multiple Bookings Same Day**: Shows most relevant booking per cell
+7. **Same-Day Turnover**: Checkout date not marked as booked
+
+### Future Enhancements (Potential)
+- Click date to create booking for that room/date
+- Filter by specific rooms
+- Export calendar view as PDF
+- Weekly view option
+- Booking duration color intensity
+- Platform-specific color coding
+
+---
+
 ## [2.2.0] - 2026-01-05
 
 ### Major Changes
