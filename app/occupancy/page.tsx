@@ -28,6 +28,7 @@ export default function RoomOccupancy() {
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [viewMode, setViewMode] = useState<'week' | 'month'>('week'); // Default to week view for mobile
   const router = useRouter();
 
   useEffect(() => {
@@ -57,28 +58,41 @@ export default function RoomOccupancy() {
     }
   };
 
-  // Generate calendar dates for current month view (show 42 days - 6 weeks)
+  // Generate calendar dates based on view mode
   const generateCalendarDates = () => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
+    if (viewMode === 'week') {
+      // Weekly view - show 7 days starting from Sunday of current week
+      const currentDayOfWeek = currentDate.getDay();
+      const weekStart = new Date(currentDate);
+      weekStart.setDate(currentDate.getDate() - currentDayOfWeek);
 
-    // First day of the month
-    const firstDay = new Date(year, month, 1);
-    const startDay = firstDay.getDay(); // 0 = Sunday
+      const dates: Date[] = [];
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(weekStart);
+        date.setDate(weekStart.getDate() + i);
+        dates.push(date);
+      }
+      return dates;
+    } else {
+      // Monthly view - show 42 days (6 weeks)
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
 
-    // Calculate start date (might be from previous month)
-    const calendarStart = new Date(firstDay);
-    calendarStart.setDate(calendarStart.getDate() - startDay);
+      const firstDay = new Date(year, month, 1);
+      const startDay = firstDay.getDay();
 
-    // Generate 42 days (6 weeks)
-    const dates: Date[] = [];
-    for (let i = 0; i < 42; i++) {
-      const date = new Date(calendarStart);
-      date.setDate(calendarStart.getDate() + i);
-      dates.push(date);
+      const calendarStart = new Date(firstDay);
+      calendarStart.setDate(calendarStart.getDate() - startDay);
+
+      const dates: Date[] = [];
+      for (let i = 0; i < 42; i++) {
+        const date = new Date(calendarStart);
+        date.setDate(calendarStart.getDate() + i);
+        dates.push(date);
+      }
+
+      return dates;
     }
-
-    return dates;
   };
 
   // Calculate booking bars for horizontal display with lane assignment
@@ -208,14 +222,26 @@ export default function RoomOccupancy() {
     return barsWithLanes;
   };
 
-  // Navigate to previous month
-  const previousMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  // Navigate to previous period (week or month)
+  const previousPeriod = () => {
+    if (viewMode === 'week') {
+      const newDate = new Date(currentDate);
+      newDate.setDate(currentDate.getDate() - 7);
+      setCurrentDate(newDate);
+    } else {
+      setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+    }
   };
 
-  // Navigate to next month
-  const nextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+  // Navigate to next period (week or month)
+  const nextPeriod = () => {
+    if (viewMode === 'week') {
+      const newDate = new Date(currentDate);
+      newDate.setDate(currentDate.getDate() + 7);
+      setCurrentDate(newDate);
+    } else {
+      setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+    }
   };
 
   // Navigate to today
@@ -223,9 +249,26 @@ export default function RoomOccupancy() {
     setCurrentDate(new Date());
   };
 
+  // Get display text for current period
+  const getPeriodText = () => {
+    if (viewMode === 'week') {
+      const weekStart = new Date(currentDate);
+      weekStart.setDate(currentDate.getDate() - currentDate.getDay());
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+
+      if (weekStart.getMonth() === weekEnd.getMonth()) {
+        return `${weekStart.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })} - ${weekEnd.getDate()}, ${weekEnd.getFullYear()}`;
+      } else {
+        return `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${weekEnd.getFullYear()}`;
+      }
+    } else {
+      return currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    }
+  };
+
   const calendarDates = generateCalendarDates();
   const bookingBars = calculateBookingBars(calendarDates);
-  const monthName = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   const today = new Date().toISOString().split('T')[0];
 
   return (
@@ -277,33 +320,62 @@ export default function RoomOccupancy() {
           <div className="space-y-6">
             {/* Calendar Controls */}
             <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+              {/* View Mode Toggle */}
+              <div className="flex justify-center mb-4">
+                <div className="inline-flex rounded-lg bg-gray-100 p-1">
+                  <button
+                    onClick={() => setViewMode('week')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition ${
+                      viewMode === 'week'
+                        ? 'bg-white text-blue-600 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Week View
+                  </button>
+                  <button
+                    onClick={() => setViewMode('month')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition ${
+                      viewMode === 'month'
+                        ? 'bg-white text-blue-600 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Month View
+                  </button>
+                </div>
+              </div>
+
+              {/* Navigation */}
               <div className="flex items-center justify-between">
                 <button
-                  onClick={previousMonth}
-                  className="p-2 hover:bg-gray-100 rounded-md transition"
-                  title="Previous Month"
+                  onClick={previousPeriod}
+                  className="p-3 sm:p-2 hover:bg-gray-100 rounded-md transition touch-manipulation"
+                  title={viewMode === 'week' ? 'Previous Week' : 'Previous Month'}
                 >
-                  <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-7 h-7 sm:w-6 sm:h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
                 </button>
 
-                <div className="text-center">
-                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{monthName}</h2>
+                <div className="text-center flex-1 px-2">
+                  <h2 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900">
+                    {getPeriodText()}
+                  </h2>
                   <button
                     onClick={goToToday}
-                    className="mt-1 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    className="mt-1 text-sm text-blue-600 hover:text-blue-700 font-medium touch-manipulation py-1"
                   >
-                    Go to Today
+                    Today
                   </button>
                 </div>
 
                 <button
-                  onClick={nextMonth}
-                  className="p-2 hover:bg-gray-100 rounded-md transition"
-                  title="Next Month"
+                  onClick={nextPeriod}
+                  className="p-3 sm:p-2 hover:bg-gray-100 rounded-md transition touch-manipulation"
+                  title={viewMode === 'week' ? 'Next Week' : 'Next Month'}
                 >
-                  <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-7 h-7 sm:w-6 sm:h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </button>
@@ -325,8 +397,8 @@ export default function RoomOccupancy() {
 
             {/* Unified Calendar Grid */}
             <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <div className="overflow-x-auto">
-                <div className="min-w-[700px]">
+              <div className="overflow-x-auto touch-pan-x">
+                <div className={viewMode === 'week' ? 'min-w-full' : 'min-w-[700px]'}>
                   {/* Day headers */}
                   <div className="grid grid-cols-7 border-b border-gray-200 bg-gray-50">
                     {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day) => (
@@ -347,7 +419,9 @@ export default function RoomOccupancy() {
                         const isToday = dateStr === today;
                         const isPast = date < new Date(today);
 
-                        let cellClass = 'min-h-[120px] p-2 border-r border-b border-gray-200 ';
+                        let cellClass = viewMode === 'week'
+                          ? 'min-h-[140px] sm:min-h-[120px] p-2 border-r border-b border-gray-200 '
+                          : 'min-h-[120px] p-2 border-r border-b border-gray-200 ';
 
                         if (!isCurrentMonth) {
                           cellClass += 'bg-gray-50 ';
@@ -372,43 +446,48 @@ export default function RoomOccupancy() {
                     <div className="absolute top-0 left-0 right-0 bottom-0 pointer-events-none">
                       <div className="grid grid-cols-7 h-full">
                         {/* Create grid cells for positioning */}
-                        {calendarDates.map((_, index) => (
-                          <div key={index} className="relative h-[120px]">
-                            {/* Booking bars for this cell */}
-                            {bookingBars
-                              .filter(bar => {
-                                const barRow = bar.row;
-                                const barStartCol = bar.startCol - 1;
-                                const cellRow = Math.floor(index / 7);
-                                const cellCol = index % 7;
-                                return barRow === cellRow && cellCol === barStartCol;
-                              })
-                              .map((bar, barIndex) => {
-                                const roomColor = ROOM_COLORS[bar.booking.roomId];
-                                const additionalGuestsCount = bar.booking.additionalGuests?.length || 0;
+                        {calendarDates.map((_, index) => {
+                          const cellHeight = viewMode === 'week' ? 140 : 120;
+                          return (
+                            <div key={index} className="relative" style={{ height: `${cellHeight}px` }}>
+                              {/* Booking bars for this cell */}
+                              {bookingBars
+                                .filter(bar => {
+                                  const barRow = bar.row;
+                                  const barStartCol = bar.startCol - 1;
+                                  const cellRow = Math.floor(index / 7);
+                                  const cellCol = index % 7;
+                                  return barRow === cellRow && cellCol === barStartCol;
+                                })
+                                .map((bar, barIndex) => {
+                                  const roomColor = ROOM_COLORS[bar.booking.roomId];
+                                  const additionalGuestsCount = bar.booking.additionalGuests?.length || 0;
+                                  const barHeight = viewMode === 'week' ? 28 : 24;
 
-                                return (
-                                  <div
-                                    key={barIndex}
-                                    className={`absolute ${roomColor.bg} ${roomColor.text} rounded-md px-2 py-1 text-xs font-medium shadow-sm hover:shadow-md transition cursor-pointer pointer-events-auto`}
-                                    style={{
-                                      width: `calc(${bar.span * 100}% - 4px)`,
-                                      top: `${30 + bar.lane * 24}px`,
-                                      left: '2px',
-                                      zIndex: 10
-                                    }}
-                                    onClick={() => setSelectedBooking(bar.booking)}
-                                    title={`${bar.booking.name} - ${bar.booking.platform}\nRoom: ${bar.booking.roomId}\n${bar.booking.checkIn} to ${bar.booking.checkOut}`}
-                                  >
-                                    <div className="truncate">
-                                      <span className="font-bold">{bar.booking.roomId}</span> - {bar.booking.name.split(' ')[0]}
-                                      {additionalGuestsCount > 0 && ` +${additionalGuestsCount}`}
+                                  return (
+                                    <div
+                                      key={barIndex}
+                                      className={`absolute ${roomColor.bg} ${roomColor.text} rounded-md px-2 sm:px-2 py-1.5 sm:py-1 text-xs sm:text-xs font-medium shadow-sm hover:shadow-md active:shadow-lg transition cursor-pointer pointer-events-auto touch-manipulation`}
+                                      style={{
+                                        width: `calc(${bar.span * 100}% - 4px)`,
+                                        top: `${30 + bar.lane * barHeight}px`,
+                                        left: '2px',
+                                        zIndex: 10,
+                                        minHeight: viewMode === 'week' ? '26px' : '22px'
+                                      }}
+                                      onClick={() => setSelectedBooking(bar.booking)}
+                                      title={`${bar.booking.name} - ${bar.booking.platform}\nRoom: ${bar.booking.roomId}\n${bar.booking.checkIn} to ${bar.booking.checkOut}`}
+                                    >
+                                      <div className="truncate">
+                                        <span className="font-bold">{bar.booking.roomId}</span> - {bar.booking.name.split(' ')[0]}
+                                        {additionalGuestsCount > 0 && ` +${additionalGuestsCount}`}
+                                      </div>
                                     </div>
-                                  </div>
-                                );
-                              })}
-                          </div>
-                        ))}
+                                  );
+                                })}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
